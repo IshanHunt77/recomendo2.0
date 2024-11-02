@@ -1,7 +1,8 @@
-const express = require("express");
-const app = express();
-const mongoose = require('mongoose')
-const cors = require('cors')
+// import { userRoutes } from "./routes/user";
+import express, { Application } from 'express'
+const app:Application = express();
+import mongoose from 'mongoose';
+import cors from 'cors'
 app.use(cors());
 app.use(express.json())
 
@@ -10,12 +11,11 @@ const mongooseConnect =async ()=>{
     console.log("MongoDb connected successfully")
 }
 
-const userRoutes = require('./routes/user')
-const adminRoutes = require('./routes/admin')
+import routes from './routes';
+app.use('/',routes)
 
-app.use('/api/v1/user',userRoutes)
-app.use('/routes/admin',adminRoutes)
 
+mongooseConnect()
 const PORT = 3000;
 app.listen(PORT,()=>{
     console.log(`Server running on PORT ${PORT}`)

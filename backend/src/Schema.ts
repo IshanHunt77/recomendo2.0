@@ -29,7 +29,7 @@ const Reviews  = new mongoose.Schema({
         ref:"Film",
         required:true
     },
-    reviewmsg:{
+    reviewContent:{
         type:String,
         required:true,
         maxlength:1000
