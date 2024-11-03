@@ -12,7 +12,7 @@ const mongooseConnect =async ()=>{
 }
 
 import routes from './routes';
-app.use('/',routes)
+app.use(routes)
 
 
 mongooseConnect()

@@ -3,12 +3,12 @@ import jwt from "jsonwebtoken";
 import { signupInput } from "../zod/zodvalidation";
 import { Comment, Film, Review, User } from "../Schema";
 import { JWT_Secret } from "../config";
+import { userType } from "../types/tsTypes";
 
 interface ReviewRequest extends Request {
     revID?: string;
 }
 
-// Extend Request interface for CustomRequest with userId
 export interface CustomRequest extends Request {
     userId?: string;
 }
@@ -16,16 +16,18 @@ export interface CustomRequest extends Request {
 export const userRoutes = Router();
 
 // Middleware for authentication
-const authMiddleware = async (req: CustomRequest, res: Response, next: NextFunction) => {
+const authMiddleware = async (req: CustomRequest, res: Response, next: NextFunction):Promise<void> => {
     const authorization = req.header("Authorization");
 
     if (!authorization) {
-        return res.status(403).json({ msg: "No Authorization Header" });
+         res.status(403).json({ msg: "No Authorization Header" });
+         return
     }
 
     const token = authorization.split(' ')[1];
     if (!token) {
-        return res.status(403).json({ msg: "Invalid Authorization Format" });
+         res.status(403).json({ msg: "Invalid Authorization Format" });
+         return
     }
 
     try {
@@ -33,19 +35,22 @@ const authMiddleware = async (req: CustomRequest, res: Response, next: NextFunct
         req.userId = decoded.id;
         next();
     } catch (err) {
-        return res.status(403).json({ msg: "User not Authorized" });
+         res.status(403).json({ msg: "User not Authorized" });
+         return
     }
 };
 
-userRoutes.post('/signup', async (req: Request, res: Response) => {
+// Signup Route (no auth required)
+userRoutes.post('/signup', async (req: Request, res: Response):Promise<void> => {
     try {
         const parsedResult = signupInput.safeParse(req.body);
         if (!parsedResult.success) {
-            return res.status(400).json({ msg: "Invalid Schema" });
+            res.status(400).json({ msg: "Invalid Schema" });
+            return;
         }
         
         const { username, email, password } = parsedResult.data;
-        const user = await User.create({ username, email, password });
+        const user: userType = await User.create({ username, email, password });
         const token = jwt.sign({ id: user.id }, JWT_Secret);
         
         res.status(201).json({ token, msg: "User Created Successfully" });
@@ -54,14 +59,15 @@ userRoutes.post('/signup', async (req: Request, res: Response) => {
     }
 });
 
-
-userRoutes.post('/signin', async (req: Request, res: Response) => {
+// Signin Route (no auth required)
+userRoutes.post('/signin', async (req: Request, res: Response):Promise<void> => {
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
 
         if (!user || user.password !== password) {
-            return res.status(403).json({ msg: "Invalid email or password" });
+            res.status(403).json({ msg: "Invalid email or password" });
+            return;
         }
         
         const token = jwt.sign({ id: user.id }, JWT_Secret);
@@ -71,10 +77,8 @@ userRoutes.post('/signin', async (req: Request, res: Response) => {
     }
 });
 
-// Middleware-protected routes
-userRoutes.use(authMiddleware);
-
-userRoutes.post('/review', async (req: CustomRequest, res: Response) => {
+// Protected Review Route (requires auth)
+userRoutes.post('/review', authMiddleware, async (req: CustomRequest, res: Response):Promise<void> => {
     try {
         const { film, review } = req.body;
         
@@ -86,7 +90,8 @@ userRoutes.post('/review', async (req: CustomRequest, res: Response) => {
         });
 
         if (!createdReview) {
-            return res.status(400).json({ msg: "Review could not be added" });
+             res.status(400).json({ msg: "Review could not be added" });
+             return
         }
 
         (req as ReviewRequest).revID = createdReview.id;
@@ -96,8 +101,8 @@ userRoutes.post('/review', async (req: CustomRequest, res: Response) => {
     }
 });
 
-// Update reviews with upvote or downvote
-userRoutes.post('/review/update', async (req: Request, res: Response) => {
+// Protected Review Update Route
+userRoutes.post('/review/update', authMiddleware, async (req: CustomRequest, res: Response):Promise<void> => {
     const { upvote, downvote, reviewmsg } = req.body;
 
     try {
@@ -107,7 +112,8 @@ userRoutes.post('/review/update', async (req: Request, res: Response) => {
         } else if (downvote) {
             update = { $inc: { downvote: -1 } };
         } else {
-            return res.status(400).json({ msg: "Invalid update parameters" });
+             res.status(400).json({ msg: "Invalid update parameters" });
+             return
         }
 
         await Review.findOneAndUpdate({ reviewContent: reviewmsg }, update);
@@ -117,14 +123,15 @@ userRoutes.post('/review/update', async (req: Request, res: Response) => {
     }
 });
 
-// Delete review by ID
-userRoutes.delete('/review/:id', async (req: Request, res: Response) => {
+// Protected Review Delete Route
+userRoutes.delete('/review/:id', authMiddleware, async (req: CustomRequest, res: Response):Promise<void> => {
     try {
         const { id } = req.params;
         const review = await Review.findByIdAndDelete(id);
 
         if (!review) {
-            return res.status(404).json({ msg: "Review Not Found" });
+             res.status(404).json({ msg: "Review Not Found" });
+             return
         }
         
         res.status(200).json({ msg: "Review Deleted Successfully" });
@@ -133,16 +140,16 @@ userRoutes.delete('/review/:id', async (req: Request, res: Response) => {
     }
 });
 
-// Delete comment by ID
-userRoutes.delete('/comment/:id', async (req: Request, res: Response) => {
+// Protected Comment Delete Route
+userRoutes.delete('/comment/:id', authMiddleware, async (req: CustomRequest, res: Response):Promise<void> => {
     try {
         const { id } = req.params;
         const comment = await Comment.findByIdAndDelete(id);
 
         if (!comment) {
-            return res.status(404).json({ msg: "Comment Not Found" });
+             res.status(404).json({ msg: "Comment Not Found" });
+             return
         }
-        
         res.status(200).json({ msg: "Comment Deleted Successfully" });
     } catch (err) {
         res.status(500).json({ msg: "Internal Server Error" });
