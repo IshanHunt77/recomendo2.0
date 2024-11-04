@@ -16,18 +16,18 @@ export interface CustomRequest extends Request {
 export const userRoutes = Router();
 
 // Middleware for authentication
-const authMiddleware = async (req: CustomRequest, res: Response, next: NextFunction):Promise<void> => {
+const authMiddleware = async (req: CustomRequest, res: Response, next: NextFunction): Promise<void> => {
     const authorization = req.header("Authorization");
 
     if (!authorization) {
-         res.status(403).json({ msg: "No Authorization Header" });
-         return
+        res.status(403).json({ msg: "No Authorization Header" });
+        return;
     }
 
     const token = authorization.split(' ')[1];
     if (!token) {
-         res.status(403).json({ msg: "Invalid Authorization Format" });
-         return
+        res.status(403).json({ msg: "Invalid Authorization Format" });
+        return;
     }
 
     try {
@@ -35,13 +35,12 @@ const authMiddleware = async (req: CustomRequest, res: Response, next: NextFunct
         req.userId = decoded.id;
         next();
     } catch (err) {
-         res.status(403).json({ msg: "User not Authorized" });
-         return
+        res.status(403).json({ msg: "User not Authorized" });
     }
 };
 
 // Signup Route (no auth required)
-userRoutes.post('/signup', async (req: Request, res: Response):Promise<void> => {
+userRoutes.post('/signup', async (req: Request, res: Response): Promise<void> => {
     try {
         const parsedResult = signupInput.safeParse(req.body);
         if (!parsedResult.success) {
@@ -60,7 +59,7 @@ userRoutes.post('/signup', async (req: Request, res: Response):Promise<void> => 
 });
 
 // Signin Route (no auth required)
-userRoutes.post('/signin', async (req: Request, res: Response):Promise<void> => {
+userRoutes.post('/signin', async (req: Request, res: Response): Promise<void> => {
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
@@ -78,7 +77,7 @@ userRoutes.post('/signin', async (req: Request, res: Response):Promise<void> => 
 });
 
 // Protected Review Route (requires auth)
-userRoutes.post('/review', authMiddleware, async (req: CustomRequest, res: Response):Promise<void> => {
+userRoutes.post('/review', authMiddleware, async (req: CustomRequest, res: Response): Promise<void> => {
     try {
         const { film, review } = req.body;
         
@@ -90,8 +89,8 @@ userRoutes.post('/review', authMiddleware, async (req: CustomRequest, res: Respo
         });
 
         if (!createdReview) {
-             res.status(400).json({ msg: "Review could not be added" });
-             return
+            res.status(400).json({ msg: "Review could not be added" });
+            return;
         }
 
         (req as ReviewRequest).revID = createdReview.id;
@@ -102,7 +101,7 @@ userRoutes.post('/review', authMiddleware, async (req: CustomRequest, res: Respo
 });
 
 // Protected Review Update Route
-userRoutes.post('/review/update', authMiddleware, async (req: CustomRequest, res: Response):Promise<void> => {
+userRoutes.post('/review/update', authMiddleware, async (req: CustomRequest, res: Response): Promise<void> => {
     const { upvote, downvote, reviewmsg } = req.body;
 
     try {
@@ -112,8 +111,8 @@ userRoutes.post('/review/update', authMiddleware, async (req: CustomRequest, res
         } else if (downvote) {
             update = { $inc: { downvote: -1 } };
         } else {
-             res.status(400).json({ msg: "Invalid update parameters" });
-             return
+            res.status(400).json({ msg: "Invalid update parameters" });
+            return;
         }
 
         await Review.findOneAndUpdate({ reviewContent: reviewmsg }, update);
@@ -124,14 +123,14 @@ userRoutes.post('/review/update', authMiddleware, async (req: CustomRequest, res
 });
 
 // Protected Review Delete Route
-userRoutes.delete('/review/:id', authMiddleware, async (req: CustomRequest, res: Response):Promise<void> => {
+userRoutes.delete('/review/:id', authMiddleware, async (req: CustomRequest, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
         const review = await Review.findByIdAndDelete(id);
 
         if (!review) {
-             res.status(404).json({ msg: "Review Not Found" });
-             return
+            res.status(404).json({ msg: "Review Not Found" });
+            return;
         }
         
         res.status(200).json({ msg: "Review Deleted Successfully" });
@@ -141,14 +140,14 @@ userRoutes.delete('/review/:id', authMiddleware, async (req: CustomRequest, res:
 });
 
 // Protected Comment Delete Route
-userRoutes.delete('/comment/:id', authMiddleware, async (req: CustomRequest, res: Response):Promise<void> => {
+userRoutes.delete('/comment/:id', authMiddleware, async (req: CustomRequest, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
         const comment = await Comment.findByIdAndDelete(id);
 
         if (!comment) {
-             res.status(404).json({ msg: "Comment Not Found" });
-             return
+            res.status(404).json({ msg: "Comment Not Found" });
+            return;
         }
         res.status(200).json({ msg: "Comment Deleted Successfully" });
     } catch (err) {
