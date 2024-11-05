@@ -1,14 +1,21 @@
 import express, { Application } from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import routes from './routes';
+import routes from './routes/userRoute';
+import userRoute from './routes/userRoute'
+import reviewRoute from './routes/reviewRoute'
+import commentRoute from './routes/commentRoute'
+import homeRoute from './routes/homeRoute'
 
 const app: Application = express();
 const PORT = 3000;
 
 app.use(cors());
 app.use(express.json());
-app.use(routes);
+app.use('/',homeRoute)
+app.use('/api/v1/user',userRoute);
+app.use('/api/v1/review',reviewRoute);
+app.use('/api/v1/comment',commentRoute);
 
 const mongooseConnect = async () => {
     try {

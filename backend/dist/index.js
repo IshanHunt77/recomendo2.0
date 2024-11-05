@@ -15,12 +15,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const cors_1 = __importDefault(require("cors"));
-const routes_1 = __importDefault(require("./routes"));
+const userRoute_1 = __importDefault(require("./routes/userRoute"));
+const reviewRoute_1 = __importDefault(require("./routes/reviewRoute"));
+const commentRoute_1 = __importDefault(require("./routes/commentRoute"));
+const homeRoute_1 = __importDefault(require("./routes/homeRoute"));
 const app = (0, express_1.default)();
 const PORT = 3000;
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
-app.use(routes_1.default);
+app.use('/', homeRoute_1.default);
+app.use('/api/v1/user', userRoute_1.default);
+app.use('/api/v1/review', reviewRoute_1.default);
+app.use('/api/v1/comment', commentRoute_1.default);
 const mongooseConnect = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield mongoose_1.default.connect("mongodb+srv://ishanproj:recum789@cluster0.pqe04.mongodb.net/Recommendo?retryWrites=true&w=majority");
